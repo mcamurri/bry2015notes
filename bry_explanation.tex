@@ -1,0 +1,101 @@
+\documentclass[a4paper]{article}
+\usepackage{amsmath}
+\numberwithin{equation}{section}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{paracol}
+\usepackage[margin=15mm]{geometry}
+\usepackage{url}
+
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\z}{\mathbf{z}}
+\newcommand{\vv}{\mathbf{v}}
+\newcommand{\cov}{\boldsymbol{\Sigma}}
+\newcommand{\bcov}{\bar{\cov}}
+\newcommand{\C}{\mathbf{C}}
+\newcommand{\I}[1]{\mathbf{I}_{#1}}
+\newcommand{\Zero}[1]{\boldsymbol{0}_{#1}}
+\newcommand{\Real}{\mathbb{R}}
+\newcommand{\K}{\mathbf{K}}
+\newcommand{\R}{\mathbf{R}}
+\newcommand{\transpose}{{\intercal}}
+\newcommand{\inverse}{{-1}}
+\title{Notes on Bry et al. \cite{bry2015ijrr} Equations}
+\date{\vspace{-5ex}}
+\author{Marco Camurri}
+\begin{document}
+\maketitle
+\begin{paracol}{2}
+\appendix
+ \section{Bry et al. 2015 \cite{bry2015ijrr}}
+\begin{align}
+  \x_t &= [ \x_t^m \; \x_t^p ] \label{eq:1}\\
+  \z_t &= h(\x_t^m, \vv_t) \label{eq:2}\\
+  \bar{\cov}_t &= \begin{bmatrix}
+                  \bcov^{m^2} & \bcov^{mp} \\
+                  \bcov^{pm} & \bcov^{p^2}
+                 \end{bmatrix} \label{eq:3}\\
+ \C &= \begin{bmatrix} \I{k} & \Zero{n-k} \end{bmatrix} \in \Real^{k\times n}
+\label{eq:4}\\
+ \K^m &= \bcov^m_t(\C^m)^\transpose(\C^m\bcov_t(\C^m)^\transpose+\R)^\inverse
+\label{eq:5}\\
+ \mu_t^m &= \bar{\mu}^m_t + \K^m(\z_t - \C^m \bar{\mu}_t^m) \label{eq:6}\\
+ \cov^m_t &= (\I{n} - \K^m \C^m)\bcov^m_t \label{eq:7}\\
+  \cov^m_t &= \bcov^m_t - \bcov^m_t(\C^m)^\transpose(\C^m
+\bcov_t(\C^m)^\transpose + \R_t)^\inverse \bcov^m_t \label{eq:8}\\
+\R_t &= (({\bcov^{m}_t})^\inverse \cov^m_t ({\bcov^m_t})^\inverse)^\inverse -
+\bcov^m_t \nonumber\\
+&= ((\cov^m)^{\inverse} - ({\bcov^m_t})^\inverse)^\inverse \label{eq:9}\\
+\z_t &= (\K^{m})^\inverse(\mu^m_t - \bar{\mu}^m_t) + \bar{\mu}^m_t \label{eq:10}
+\end{align}
+\switchcolumn
+\appendix
+\setcounter{section}{1}
+\section{Code implementation \cite{pronto}}
+\begin{align}
+  \x_t &= [ \x_t^m \in \Real^{k} \; \x_t^p\in\Real^{n-k} ]  \label{eqb:1}\\
+ \z_t &\in \Real^k \label{eqb:2}\\
+   \bar{\cov}_t &= \begin{bmatrix}
+                  \bcov^{m^2} & \bcov^{mp} \\
+                  \bcov^{pm} & \bcov^{p^2}
+                 \end{bmatrix} \in \Real^{n \times n}\label{eqb:3}\\
+ \C &= \begin{bmatrix} \I{k} & \Zero{n-k} \end{bmatrix} \in \Real^{k\times n}
+\label{eqb:4}\\
+ \K^\transpose &= (\R_t + \C \bcov_t \C^\transpose)^\inverse \C \bcov_t\quad
+\text{with}\;
+\K \in \Real^{n\times k} \label{eqb:5}\\
+ \mu_t &= \bar{\mu}_t + \K (\z_t - \C\bar{\mu}_t) \label{eqb:6}\\
+ \cov_t &= \bcov_t - \K \C \bcov_t \label{eqb:7}
+\end{align}
+
+\end{paracol}
+The Equations \ref{eq:1}--\ref{eq:10} are taken directly from
+\cite{bry2015ijrr} without modifications. The dimensionality of the matrices
+were not specified and the subscript $m$ is used inconsistently (e.g., is
+$\C^m$ the same as $\C$ or is it only its left part?).
+The introductory part about partitioning the state makes the reader believe
+that all matrices with the $m$ superscript are square $k \times k$. Instead,
+they have standard size, therefore Equations \ref{eq:5}--\ref{eq:7} correspond
+to standard Kalman updates equations where the Jacobian of $h$ is simply the
+selector matrix $\C$.
+
+Since the GPF keeps track of mean and covariance of a set of particles over
+time, independently of the Kalman filter, on the left side it is assumed that
+the prior mean $\bar{\mu}^m$, the posterior mean $\mu^m$ and their respective
+covariance matrices are known, whereas the mesurement $\z_t$ and its covariance
+matrix $\R_t$ are unknown, so they are recovered in Equations
+\ref{eq:9}--\ref{eq:10} and then plugged back in to make the standard Kalman
+update.
+
+In the code related to non-GPF updates, this is not necessary because $\z_t$
+and $\R_t$ are provided by the user. Therefore, a standard Kalman update is
+carried out by Equations \ref{eqb:5}--\ref{eqb:7}, which are implemented in
+\cite{pronto}.
+For numerical reasons, in Equation \ref{eqb:5} the transpose of the Kalman
+gain is computed. Howerver, since $\R_t$, $\bcov_t$, and
+$\C\bcov_t\C^\transpose$ are symmetric, it is easy to prove that (\ref{eqb:5})
+is equivalent to (\ref{eq:5}).
+\bibliographystyle{plain}
+\bibliography{bry_explanation}
+
+\end{document}
